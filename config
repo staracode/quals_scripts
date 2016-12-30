@@ -1,0 +1,23 @@
+threshold=$1
+version=$2
+
+echo "step1"
+#look at tf expressed if greater than some threshold
+awk -v expThreshold=$threshold '{ if ($2 > expThreshold ) {print $1} }' co/cardiac/table_s4_gene_association_enhancer_status.txt > co/cardiac/${version}/table_s4_gene_association_enhancer_status_ESC.txt
+
+echo "step2"
+#filter transfac for cardiac expressed genes
+python co/scripts/filter_match_tf_profile_for_dev.py co/cardiac/${version}/table_s4_gene_association_enhancer_status_ESC.txt co/cardiac/${version}/transfac_cardiac_exp_tf.prf
+
+echo "step3"
+#look for tf matches
+/data/transfac/1_transfac/transfac_2012.4/match/bin/match /data/transfac/1_transfac/transfac_2012.4/match/data/matrix.dat  co/cardiac/table_s4_union_enhancer_ESC_chr10.fa  co/cardiac/${version}/table_s4_union_enhancer_ESC_chr10.match  co/cardiac/${version}/transfac_cardiac_exp_tf.prf
+
+echo "step4"
+#calculate hamming distance between motifs found (1/0) on enhancers
+python  co/scripts/runTFModels.py  co/cardiac/table_s4_union_enhancer_ESC_chr10.bed co/cardiac/${version}/table_s4_union_enhancer_ESC_chr10.match 5 co/cardiac/${version}/table_s4_union_enhancer_ESC_chr10_motif_present_by_enhancer.txt
+
+echo "step5"
+#calculate co-occurrence counts
+python  co/scripts/runTFModels.py  co/cardiac/table_s4_union_enhancer_ESC_chr10.bed co/cardiac/${version}/table_s4_union_enhancer_ESC_chr10.match 6 co/cardiac/${version}/table_s4_union_enhancer_ESC_chr10_co_occurrence_counts.txt
+
